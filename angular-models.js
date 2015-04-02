@@ -1,6 +1,11 @@
+/**
+ * Original: https://github.com/shinetech/angular-models/blob/master/angular-models.js
+ * Extended by Piotr Rogowski <piotrekrogowski@gmail.com>
+ */
+
 /* Services */
 
-angular.module('shinetech.models', []).factory('extend',
+angular.module('angular.models', []).factory('extend',
   /**
    * A custom object extension method that copies property getter function definitions across from
    * the source to the target, rather than trying to just evaluate the property on the source and
@@ -27,14 +32,13 @@ angular.module('shinetech.models', []).factory('extend',
               // Otherwise, just do a regular copy
               dst[key] = obj[key];
             }
-          };
+          }
         }
       });
-
       return dst;
     };
   }
-).factory('BaseModel',
+).factory('Base',
   /**
    * A base mixin that other mixins can extend upon. Provides basic infrastructure for defining new
    * mixins (`extend`) and mixing them into objects (`mixInto`).
@@ -49,7 +53,16 @@ angular.module('shinetech.models', []).factory('extend',
        */
       extend: function() {
         var args = Array.prototype.slice.call(arguments);
-        return extend.apply(null, [{}, this].concat(args));
+        var dst = extend.apply(null, [{}, this].concat(args));
+        dst.__parent = this;
+        dst.__super = superConstructor;
+        return dst;
+
+        function superConstructor() {
+          if(this.__parent.construct){
+            this.__parent.construct.call(this, arguments);
+          }
+        }
       },
       /**
        * Mixes the properties of this mixin into an object. If the mixin defines a beforeMixingInto
@@ -103,6 +116,8 @@ angular.module('shinetech.models', []).factory('extend',
               }
             }
           }, this);
+
+          if (this.construct) this.construct.apply(object, arguments);
 
           return object;
         }
@@ -179,8 +194,8 @@ angular.module('shinetech.models', []).factory('extend',
   ).factory('memoize', function() {
       function unmemoize() {
         delete this._cache;
-      };
-      /*
+      }
+    /*
        * Memoizes a function
        *
        * @param {function()} func the function to be memoized
@@ -204,7 +219,7 @@ angular.module('shinetech.models', []).factory('extend',
           memoized._cache = {result: func.apply(this, arguments)};
         }
         return memoized._cache.result;
-      }
+      };
 
       memoized.unmemoize = unmemoize;
 
